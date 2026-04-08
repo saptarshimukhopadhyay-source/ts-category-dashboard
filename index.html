@@ -1111,28 +1111,21 @@ function renderTable(data) {
 }
 
 function exportBreakdownCSV() {
-  // match tickets using same global + breakdown filters
-  const selMonths = state.months.includes('ALL') ? MONTHS_ORDER : MONTHS_ORDER.filter(m => state.months.includes(m));
+  const selMonths = state.months.includes('ALL') ? MONTHS_ORDER : MONTHS_ORDER.filter(function(m) { return state.months.includes(m); });
 
   const matching = TICKET_DATA.filter(function(t) {
-    // global month filter
     if (!selMonths.includes(t.m)) return false;
-    // global category filter
     if (!state.categories.includes('ALL') && !state.categories.includes(t.c)) return false;
-    // global subcategory filter
     if (!state.subcategories.includes('ALL') && !state.subcategories.includes(t.s)) return false;
-    // global PM filter
     if (state.pms.indexOf('ALL') === -1) {
-      const pmStr = PM_MAP[t.c + '|||' + t.s] || '';
-      const rowPMs = pmStr.split(',').map(function(p) { return p.trim(); });
+      var pmStr = PM_MAP[t.c + '|||' + t.s] || '';
+      var rowPMs = pmStr.split(',').map(function(p) { return p.trim(); });
       if (!state.pms.some(function(p) { return rowPMs.indexOf(p) !== -1; })) return false;
     }
-    // breakdown PM filter
     if (bdState.pm !== 'ALL') {
-      const pmStr = PM_MAP[t.c + '|||' + t.s] || '';
-      if (!pmStr.split(',').map(function(p) { return p.trim(); }).includes(bdState.pm)) return false;
+      var pmStr2 = PM_MAP[t.c + '|||' + t.s] || '';
+      if (!pmStr2.split(',').map(function(p) { return p.trim(); }).includes(bdState.pm)) return false;
     }
-    // breakdown SubCategory filter
     if (bdState.subcat !== 'ALL' && t.s !== bdState.subcat) return false;
     return true;
   });
@@ -1142,20 +1135,19 @@ function exportBreakdownCSV() {
     return;
   }
 
-  const header = 'ticket_id,month,category,subCategory,pm
-';
-  const rows = matching.map(function(t) {
-    const pm = (PM_MAP[t.c + '|||' + t.s] || '').replace(/,/g, ';');
-    return t.i + ',' + t.m + ',' + t.c + ',' + t.s + ',' + pm;
-  }).join('
-');
+  var lines = ['ticket_id,month,category,subCategory,pm'];
+  matching.forEach(function(t) {
+    var pm = (PM_MAP[t.c + '|||' + t.s] || '').replace(/,/g, ';');
+    lines.push(t.i + ',' + t.m + ',' + t.c + ',' + t.s + ',' + pm);
+  });
+  var csv = lines.join('\n');
 
-  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const ts   = new Date().toISOString().slice(0,10);
-  const pm   = bdState.pm !== 'ALL' ? '_' + bdState.pm : '';
-  const sub  = bdState.subcat !== 'ALL' ? '_' + bdState.subcat : '';
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var ts   = new Date().toISOString().slice(0,10);
+  var pm   = bdState.pm !== 'ALL' ? '_' + bdState.pm : '';
+  var sub  = bdState.subcat !== 'ALL' ? '_' + bdState.subcat : '';
   a.href = url;
   a.download = 'tickets' + pm + sub + '_' + ts + '.csv';
   document.body.appendChild(a);
@@ -1163,7 +1155,6 @@ function exportBreakdownCSV() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 window.addEventListener('load', init);
 </script>
 </body>
